@@ -4,7 +4,14 @@
 from wxbot import *
 import ConfigParser
 import json
+import thread
+import time
+import requests
 
+groupid = '0'
+warningtime = 3600
+ip = ''
+status = ''
 
 class TulingWXBot(WXBot):
     def __init__(self):
@@ -63,6 +70,7 @@ class TulingWXBot(WXBot):
                     self.send_msg_by_uid(u'[Robot]' + u'机器人已开启！', msg['to_user_id'])
 
     def handle_msg_all(self, msg):
+	global groupid, status, ip
         if not self.robot_switch and msg['msg_type_id'] != 1:
             return
         if msg['msg_type_id'] == 1 and msg['content']['type'] == 0:  # reply to self
@@ -88,21 +96,44 @@ class TulingWXBot(WXBot):
                                 break
                 if is_at_me:
                     src_name = msg['content']['user']['name']
-                    reply = 'to ' + src_name + ': '
+                    reply = ''
                     if msg['content']['type'] == 0:  # text message
-                        reply += self.tuling_auto_reply(msg['content']['user']['id'], msg['content']['desc'])
+		    	if msg['content']['desc'] == 'status':
+			    reply = status
+			elif msg['content']['desc'] == 'ip':
+			    reply = ip
+			else:
+                            reply = self.tuling_auto_reply(msg['content']['user']['id'], msg['content']['desc'])
                     else:
-                        reply += u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
+                    	reply = u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
                     self.send_msg_by_uid(reply, msg['user']['id'])
+		    groupid = msg['user']['id']
 
+def alarm(bot):
+    while 1:
+        global groupid, warningtime, status
+	time.sleep(warningtime)
+	try:
+            bot.send_msg_by_uid('Timed alarm:' + status, groupid)
+        except:
+            pass
+
+def sync():
+    global ip, status
+    while 1:
+        reply1 = requests.get('http://monitor.labnetwork.com:9080/robot/ip', timeout=15);
+        ip = reply1.text
+        reply2 = requests.get('http://monitor.labnetwork.com:9080/robot/status', timeout=15);
+        status = reply2.text
+	time.sleep(60)
 
 def main():
     bot = TulingWXBot()
     bot.DEBUG = True
-    bot.conf['qr'] = 'png'
-
+    bot.conf['qr'] = 'tty'
+    thread.start_new_thread(alarm, (bot, ) )
+    thread.start_new_thread(sync, ( ) )
     bot.run()
-
 
 if __name__ == '__main__':
     main()
