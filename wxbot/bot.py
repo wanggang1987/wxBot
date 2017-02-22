@@ -108,7 +108,6 @@ class TulingWXBot(WXBot):
 
     def getReply(self, id, msg):
         global status, ip
-        print (id)
         if msg == 'status':
             return status
         elif msg == 'ip':
