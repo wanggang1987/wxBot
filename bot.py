@@ -13,6 +13,7 @@ warningtime = 3600
 ip = ''
 status = ''
 
+
 class TulingWXBot(WXBot):
     def __init__(self):
         WXBot.__init__(self)
@@ -43,8 +44,8 @@ class TulingWXBot(WXBot):
                 result = respond['url']
             elif respond['code'] == 302000:
                 for k in respond['list']:
-                    result = result + u"【" + k['source'] + u"】 " +\
-                        k['article'] + "\t" + k['detailurl'] + "\n"
+                    result = result + u"【" + k['source'] + u"】 " + \
+                             k['article'] + "\t" + k['detailurl'] + "\n"
             else:
                 result = respond['text'].replace('<br>', '  ')
                 result = result.replace(u'\xa0', u' ')
@@ -70,13 +71,14 @@ class TulingWXBot(WXBot):
                     self.send_msg_by_uid(u'[Robot]' + u'机器人已开启！', msg['to_user_id'])
 
     def handle_msg_all(self, msg):
-	global groupid, status, ip
+        global groupid
         if not self.robot_switch and msg['msg_type_id'] != 1:
             return
         if msg['msg_type_id'] == 1 and msg['content']['type'] == 0:  # reply to self
             self.auto_switch(msg)
         elif msg['msg_type_id'] == 4 and msg['content']['type'] == 0:  # text message from contact
-            self.send_msg_by_uid(self.tuling_auto_reply(msg['user']['id'], msg['content']['data']), msg['user']['id'])
+            reply = self.getReply(msg['user']['id'], msg['content']['data'])
+            self.send_msg_by_uid(reply, msg['user']['id'])
         elif msg['msg_type_id'] == 3 and msg['content']['type'] == 0:  # group text message
             if 'detail' in msg['content']:
                 my_names = self.get_group_member_name(msg['user']['id'], self.my_account['UserName'])
@@ -98,43 +100,54 @@ class TulingWXBot(WXBot):
                     src_name = msg['content']['user']['name']
                     reply = ''
                     if msg['content']['type'] == 0:  # text message
-		    	if msg['content']['desc'] == 'status':
-			    reply = status
-			elif msg['content']['desc'] == 'ip':
-			    reply = ip
-			else:
-                            reply = self.tuling_auto_reply(msg['content']['user']['id'], msg['content']['desc'])
+                        reply = self.getReply(msg['content']['user']['id'], msg['content']['desc'])
                     else:
-                    	reply = u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
+                        reply = u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
                     self.send_msg_by_uid(reply, msg['user']['id'])
-		    groupid = msg['user']['id']
+                    groupid = msg['user']['id']
+
+    def getReply(self, id, msg):
+        global status, ip
+        print id
+        if msg == 'status':
+            return status
+        elif msg == 'ip':
+            return ip
+        else:
+            return self.tuling_auto_reply(id, msg)
+
 
 def alarm(bot):
     while 1:
         global groupid, warningtime, status
-	time.sleep(warningtime)
-	try:
+        time.sleep(warningtime)
+        try:
             bot.send_msg_by_uid('Timed alarm:' + status, groupid)
         except:
             pass
 
+
 def sync():
     global ip, status
     while 1:
-        reply1 = requests.get('http://monitor.labnetwork.com:9080/robot/ip', timeout=15);
-        ip = reply1.text
-        reply2 = requests.get('http://monitor.labnetwork.com:9080/robot/status', timeout=15);
-        status = reply2.text
-	time.sleep(60)
+        try:
+            reply1 = requests.get('http://monitor.labnetwork.com:9080/robot/ip', timeout=15);
+            ip = reply1.text
+            reply2 = requests.get('http://monitor.labnetwork.com:9080/robot/status', timeout=15);
+            status = reply2.text
+            time.sleep(60)
+        except:
+            pass
+
 
 def main():
     bot = TulingWXBot()
     bot.DEBUG = True
     bot.conf['qr'] = 'tty'
-    thread.start_new_thread(alarm, (bot, ) )
-    thread.start_new_thread(sync, ( ) )
+    thread.start_new_thread(alarm, (bot,))
+    thread.start_new_thread(sync, ( ))
     bot.run()
+
 
 if __name__ == '__main__':
     main()
-
