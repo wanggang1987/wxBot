@@ -13,6 +13,7 @@ groupid = '0'
 warningtime = 3600
 ip = ''
 status = ''
+fullmoon = ''
 
 
 class TulingWXBot(WXBot):
@@ -107,33 +108,38 @@ class TulingWXBot(WXBot):
                     groupid = msg['user']['id']
 
     def getReply(self, id, msg):
-        global status, ip
+        global ip, status, fullmoon
         if msg == 'status':
             return status
         elif msg == 'ip':
             return ip
+        elif msg == 'fullmoon':
+            return fullmoon
         else:
             return self.tuling_auto_reply(id, msg)
 
 
 def alarm(bot):
+    global groupid, warningtime
     while 1:
-        global groupid, warningtime, status
         time.sleep(warningtime)
         try:
-            bot.send_msg_by_uid('Timed alarm:' + status, groupid)
+            msg = bot.getReply(0, 'fullmoon')
+            bot.send_msg_by_uid(msg, groupid)
         except:
             pass
 
 
 def sync():
-    global ip, status
+    global ip, status, fullmoon
     while 1:
         try:
-            reply1 = requests.get('http://monitor.labnetwork.com:9080/robot/ip', timeout=15);
+            reply1 = requests.get('http://monitor.labnetwork.com:9080/robot/ip', timeout=15)
             ip = reply1.text
-            reply2 = requests.get('http://monitor.labnetwork.com:9080/robot/status', timeout=15);
+            reply2 = requests.get('http://monitor.labnetwork.com:9080/robot/status', timeout=15)
             status = reply2.text
+            reply3 = requests.get('http://10.38.2.107:10010/count/update', timeout=15)
+            fullmoon = u"Fullmoon今天更新了" + reply3.text + u"条数据"
             time.sleep(60)
         except:
             pass
