@@ -116,7 +116,6 @@ class TulingWXBot(WXBot):
         elif msg == 'fullmoon':
             return fullmoon
         else:
-            print (msg)
             res = requests.post('http://127.0.0.1:8080/quote', data=msg.encode('utf8'), timeout=15)
             if res.text == 'false':
                 return self.tuling_auto_reply(id, msg)
