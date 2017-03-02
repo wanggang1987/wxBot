@@ -117,12 +117,12 @@ class TulingWXBot(WXBot):
         elif msg == 'fullmoon':
             return fullmoon
         else:
-            url = "http://127.0.0.1:8080/ask?question=" + msg
-            res = requests.get(url, timeout=15)
-            if res.text == 'false':
-                return self.tuling_auto_reply(id, msg)
-            else:
-                return res.text;
+#            url = "http://127.0.0.1:8080/ask?question=" + msg
+#            res = requests.get(url, timeout=15)
+#            if res.text == 'false':
+            return self.tuling_auto_reply(id, msg)
+#            else:
+#                return res.text;
 
 
 def alarm(bot):
